@@ -1,7 +1,9 @@
 import express, { Application } from 'express'
-import cookie from 'cookie-parser'
+import cookieParser from 'cookie-parser'
 import cors from 'cors'
+import credentials from './api/middleware/Credentials'
 import helmet from 'helmet';
+
 
 import Routes from './api/routes';
 
@@ -15,9 +17,10 @@ class App {
   }
 
   private middlewares (): void {
-    this.app.use(express.json())
+    this.app.use(credentials);
     this.app.use(cors())
-    this.app.use(cookie());
+    this.app.use(cookieParser());
+    this.app.use(express.json())
     this.app.use(helmet());
   }
 

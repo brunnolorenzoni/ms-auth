@@ -19,17 +19,21 @@ export default class AuthController {
     const { email, password } = req.body as unknown as IRegister; 
     try {
       const { accessToken, refreshToken } = await this.service.login(email, password);
-      res.send({ accessToken, refreshToken }).status(200);
+      res.cookie('jwt', refreshToken, { httpOnly: true, sameSite: 'none', secure: !!process.env.COOKIE_SECURE, path: '/', maxAge: 24 * 60 * 60 * 1000 });
+      res.send({ access_token: accessToken }).status(200);
     } catch (e) {
       next(e);
     }
   }
 
   async verify(req: Request, res: Response, next: NextFunction) {
-    const [, token] = req.headers.authorization!.split(" ")
+    const [, accessToken] = req.headers.authorization!.split(" ")
+    const refreshToken = req.cookies.jwt
     try {
-      await this.service.verify(token)
-      res.status(200).end();
+
+      await this.service.verify(accessToken, refreshToken) 
+        ? res.status(200).send()
+        : res.status(401).send()
     } catch (e) {
       next(e)
     }
@@ -37,23 +41,23 @@ export default class AuthController {
   }
 
   async refresh(req: Request, res: Response, next: NextFunction) {
-    const token = req.body.refreshToken
+    const [, oldAccessToken] = req.headers.authorization!.split(" ")
+    const jwtRefreshToken = req.cookies.jwt
     try {
-      const { accessToken, refreshToken } = await this.service.refresh(token);
-      res.cookie('refreshToken', refreshToken, { httpOnly: true, sameSite: 'none', secure: true, maxAge: 24 * 60 * 60 * 1000 });
-      res.send({ accessToken, refreshToken }).status(200);
+      const accessToken = await this.service.refresh(oldAccessToken, jwtRefreshToken);
+      res.cookie('jwt', jwtRefreshToken, { httpOnly: true, sameSite: 'none', secure: !!process.env.COOKIE_SECURE, path: '/', maxAge: 24 * 60 * 60 * 1000 });
+      res.send({ access_token: accessToken }).status(200);
     } catch (e) {
       next(e);
     }
   }
 
   async logout(req: Request, res: Response, next: NextFunction) {
-    const { jwt } = req.cookies
-    console.log(jwt)
+    const token = req.cookies.jwt
     try {
-      await this.service.logout(jwt);
-      //res.clearCookie('jwt', { httpOnly: true, sameSite: 'none', secure: true });
-      //res.sendStatus(204);
+      await this.service.logout(token);
+      res.clearCookie('jwt', { httpOnly: true, sameSite: 'none', secure: !!process.env.COOKIE_SECURE, path: '/' });
+      res.status(204).send();
     } catch (e) {
       next(e);
     }

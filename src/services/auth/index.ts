@@ -20,15 +20,21 @@ class AuthService {
         }
       },
       this.acess_token_secret,
-      { expiresIn: '30s' }
+      { expiresIn: '30s', subject: user.id }
     );
   }
 
-  generateRefreshToken(id: string) {
+  generateRefreshToken(user: User) {
     return jwt.sign(
-      { "id": id },
+      {
+        "user": {
+          "id": user.id,
+          "email": user.email,
+          "roles": user.roles
+        }
+      },
       this.refresh_token_secret,
-      { expiresIn: '24h' }
+      { expiresIn: '24h', subject: user.id }
     );
   }
   
@@ -39,7 +45,7 @@ class AuthService {
     if(!passwordCompared) throw new Error('Wrong credentials')
 
     const accessToken = this.generateAcessToken(user)
-    const refreshToken = this.generateRefreshToken(user.id)
+    const refreshToken = this.generateRefreshToken(user)
     
     user.refreshToken = refreshToken
     await this.repository.update(user)
@@ -47,37 +53,42 @@ class AuthService {
     return ({ accessToken, refreshToken })
   }
 
-  async refresh (token: string) : Promise<{ accessToken:string, refreshToken:string }> {
-    const user = await this.repository.findByRefreshToken(token)
+  async refresh (accessToken: string, refreshToken: string) : Promise<string> {
+    const user = await this.repository.findByRefreshToken(refreshToken)
     if (!user) throw new Error('Token invalid')
 
     try {
-      jwt.verify(token, this.refresh_token_secret)
-
-      const accessToken = this.generateAcessToken(user)
-      const refreshToken = this.generateRefreshToken(user.id)
-
-      user.refreshToken = refreshToken
-      await this.repository.update(user)
-
-      return { accessToken, refreshToken }
+      jwt.verify(refreshToken, this.refresh_token_secret)
+      const newAccessToken = this.generateAcessToken(user)
+      return newAccessToken
     } catch (e: any) {
       throw e.message
     }
 
   }
 
-  async verify (token: string) : Promise<string | jwt.JwtPayload> {
+  async verify (accessToken: string, refreshToken: string) : Promise<boolean> {
     try {
-      const tokenVerifaction = jwt.verify(token, this.acess_token_secret);
-      return tokenVerifaction
+      const decodedAccessToken = jwt.verify(accessToken, this.acess_token_secret) as { user: User}
+      const decodedRefreshToken = jwt.verify(refreshToken, this.refresh_token_secret) as { user: User}
+      if(decodedAccessToken.user.id !== decodedRefreshToken.user.id) return false
+      
+      const user = await this.repository.findById(decodedRefreshToken.user.id)
+      if (!user || user.refreshToken != refreshToken) return false
+
+      return true
+
     } catch (e: any) {
       throw e.message
     }
   }
 
   async logout (refreshToken: string) : Promise<void> {
-    console.log('Logout', refreshToken)
+    const user = await this.repository.findByRefreshToken(refreshToken)
+    if (!user) throw new Error('Token invalid')
+
+    user.refreshToken = null
+    await this.repository.update(user)
   }
   
 }

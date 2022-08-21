@@ -14,7 +14,6 @@ export default class RegisterController {
 
   async register(req: Request, res: Response, next: NextFunction) {
     const { email, password } = req.body as unknown as IRegister; 
-    console.log(email, password)
     try {
       await this.service.register(email, password);
       res.status(201).send('User created');

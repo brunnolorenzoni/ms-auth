@@ -5,11 +5,11 @@ export default class UserInMemory implements IUserRepository {
 
   users: Array<User> = [
     {
-      id: '4c158ef4-8a6a-4b93-a4fa-e4d97286c77c',
+      refreshToken: null,
+      id: '9fe7bee3-ac4d-47ee-b5c6-6f17036eae46',
       email: 'lorenzoni.brunno@gmail.com',
-      password: '$2b$10$FJoDARBWCp8owbNarEfuL.qF5lzVoPueZIPxDWLtQMZINMr20T53y',
-      roles: [ 2 ],
-      refreshToken: null
+      password: '$2b$10$4CxqMFBQXD6U8JZwCHtBreACDqvxnU8vJBoHrYQIUbmSnVGYE4.Fu',
+      roles: [ 2 ]
     }
   ]
 
@@ -20,6 +20,10 @@ export default class UserInMemory implements IUserRepository {
   async update (user: User) : Promise<void> {
     const index = this.users.findIndex((u: User) => u.id === user.id)
     this.users[index] = user
+  }
+
+  async findById (id: string) : Promise<User | undefined> {
+    return this.users.find((u:User) => u.id === id)
   }
 
   async findByEmail (email: string) : Promise<User | undefined> {
