@@ -2,6 +2,7 @@ import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
 import IUserRepository from '../../repositories/IUserRepository'
 import User from '../../domain/User'
+import { UnauthorizedError } from '../../api/helpers/ApiError'
 
 
 class AuthService {
@@ -40,9 +41,9 @@ class AuthService {
   
   async login(email:string, password:string): Promise<{ accessToken:string, refreshToken:string }> {
     const user = await this.repository.findByEmail(email) as unknown as User
-    if(!user) throw new Error('Wrong credentials')
+    if(!user) throw new UnauthorizedError('Wrong credentials')
     const passwordCompared = await bcrypt.compare(password, user.password);
-    if(!passwordCompared) throw new Error('Wrong credentials')
+    if(!passwordCompared) throw new UnauthorizedError('Wrong credentials')
 
     const accessToken = this.generateAcessToken(user)
     const refreshToken = this.generateRefreshToken(user)
@@ -55,14 +56,14 @@ class AuthService {
 
   async refresh (accessToken: string, refreshToken: string) : Promise<string> {
     const user = await this.repository.findByRefreshToken(refreshToken)
-    if (!user) throw new Error('Token invalid')
+    if (!user) throw new UnauthorizedError('Token invalid')
 
     try {
       jwt.verify(refreshToken, this.refresh_token_secret)
       const newAccessToken = this.generateAcessToken(user)
       return newAccessToken
     } catch (e: any) {
-      throw e.message
+      throw new UnauthorizedError(e.message)
     }
 
   }
@@ -79,13 +80,13 @@ class AuthService {
       return true
 
     } catch (e: any) {
-      throw e.message
+      throw new UnauthorizedError(e.message)
     }
   }
 
   async logout (refreshToken: string) : Promise<void> {
     const user = await this.repository.findByRefreshToken(refreshToken)
-    if (!user) throw new Error('Token invalid')
+    if (!user) throw new UnauthorizedError('Token invalid')
 
     user.refreshToken = null
     await this.repository.update(user)

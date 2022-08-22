@@ -27,11 +27,11 @@ export default class AuthController {
   }
 
   async verify(req: Request, res: Response, next: NextFunction) {
-    const [, accessToken] = req.headers.authorization!.split(" ")
+    const [, authorization] = req.headers.authorization!.split(' ') || req.headers.Authorization!.toString().split(' ')
     const refreshToken = req.cookies.jwt
     try {
 
-      await this.service.verify(accessToken, refreshToken) 
+      await this.service.verify(authorization, refreshToken) 
         ? res.status(200).send()
         : res.status(401).send()
     } catch (e) {
@@ -41,7 +41,7 @@ export default class AuthController {
   }
 
   async refresh(req: Request, res: Response, next: NextFunction) {
-    const [, oldAccessToken] = req.headers.authorization!.split(" ")
+    const [, oldAccessToken] = req.headers.authorization!.split(' ') || req.headers.Authorization!.toString().split(' ')
     const jwtRefreshToken = req.cookies.jwt
     try {
       const accessToken = await this.service.refresh(oldAccessToken, jwtRefreshToken);
