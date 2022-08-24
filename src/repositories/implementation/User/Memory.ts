@@ -6,9 +6,9 @@ export default class UserInMemory implements IUserRepository {
   users: Array<User> = [
     {
       refreshToken: null,
-      id: '9fe7bee3-ac4d-47ee-b5c6-6f17036eae46',
+      id: '5cff623c-d1e9-4d37-ae07-5be8609ee8af',
       email: 'lorenzoni.brunno@gmail.com',
-      password: '$2b$10$4CxqMFBQXD6U8JZwCHtBreACDqvxnU8vJBoHrYQIUbmSnVGYE4.Fu',
+      password: '$2b$10$nJkuABVn3b/0d8cetmSBa.tysGOnx1KWax/7Ffpn7jvKulOwWgzVS',
       roles: [ 2 ]
     }
   ]

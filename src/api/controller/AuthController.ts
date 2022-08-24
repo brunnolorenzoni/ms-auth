@@ -19,7 +19,7 @@ export default class AuthController {
     const { email, password } = req.body as unknown as IRegister; 
     try {
       const { accessToken, refreshToken } = await this.service.login(email, password);
-      res.cookie('jwt', refreshToken, { httpOnly: true, sameSite: 'none', secure: !!process.env.COOKIE_SECURE, path: '/', maxAge: 24 * 60 * 60 * 1000 });
+      res.cookie('jwt', refreshToken, { httpOnly: true, sameSite: 'none', secure: true, path: '/', maxAge: 24 * 60 * 60 * 1000 });
       res.send({ access_token: accessToken }).status(200);
     } catch (e) {
       next(e);
@@ -30,10 +30,7 @@ export default class AuthController {
     const [, authorization] = req.headers.authorization!.split(' ') || req.headers.Authorization!.toString().split(' ')
     const refreshToken = req.cookies.jwt
     try {
-
-      await this.service.verify(authorization, refreshToken) 
-        ? res.status(200).send()
-        : res.status(401).send()
+      await this.service.verify(authorization, refreshToken)
     } catch (e) {
       next(e)
     }
@@ -45,7 +42,7 @@ export default class AuthController {
     const jwtRefreshToken = req.cookies.jwt
     try {
       const accessToken = await this.service.refresh(oldAccessToken, jwtRefreshToken);
-      res.cookie('jwt', jwtRefreshToken, { httpOnly: true, sameSite: 'none', secure: !!process.env.COOKIE_SECURE, path: '/', maxAge: 24 * 60 * 60 * 1000 });
+      res.cookie('jwt', jwtRefreshToken, { httpOnly: true, sameSite: 'none', secure: true, path: '/', maxAge: 24 * 60 * 60 * 1000 });
       res.send({ access_token: accessToken }).status(200);
     } catch (e) {
       next(e);
@@ -56,7 +53,7 @@ export default class AuthController {
     const token = req.cookies.jwt
     try {
       await this.service.logout(token);
-      res.clearCookie('jwt', { httpOnly: true, sameSite: 'none', secure: !!process.env.COOKIE_SECURE, path: '/' });
+      res.clearCookie('jwt', { httpOnly: true, sameSite: 'none', secure: true, path: '/' });
       res.status(204).send();
     } catch (e) {
       next(e);

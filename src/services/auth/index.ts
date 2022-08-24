@@ -21,7 +21,7 @@ class AuthService {
         }
       },
       this.acess_token_secret,
-      { expiresIn: '30s', subject: user.id }
+      { expiresIn: '1h', subject: user.id }
     );
   }
 
@@ -72,10 +72,11 @@ class AuthService {
     try {
       const decodedAccessToken = jwt.verify(accessToken, this.acess_token_secret) as { user: User}
       const decodedRefreshToken = jwt.verify(refreshToken, this.refresh_token_secret) as { user: User}
-      if(decodedAccessToken.user.id !== decodedRefreshToken.user.id) return false
+
+      if(decodedAccessToken.user.id !== decodedRefreshToken.user.id) throw new UnauthorizedError('Tokens not match')
       
       const user = await this.repository.findById(decodedRefreshToken.user.id)
-      if (!user || user.refreshToken != refreshToken) return false
+      if (!user || user.refreshToken != refreshToken) throw new UnauthorizedError('Token not match with user')
 
       return true
 
