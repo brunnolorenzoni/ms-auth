@@ -31,6 +31,7 @@ export default class AuthController {
     const refreshToken = req.cookies.jwt
     try {
       await this.service.verify(authorization, refreshToken)
+      res.send().status(200)
     } catch (e) {
       next(e)
     }
